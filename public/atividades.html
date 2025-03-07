@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atividades</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        input, button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h2>Lista de Atividades</h2>
+    <div id="activitiesList"></div>
+
+    <h2>Gerenciar Atividades (Admin)</h2>
+    <input type="text" id="titulo" placeholder="Título">
+    <input type="text" id="descricao" placeholder="Descrição">
+    <input type="number" id="vagas" placeholder="Vagas">
+    <input type="date" id="data">
+    <button onclick="criarAtividade()">Criar Atividade</button>
+
+    <p id="response"></p>
+
+    <script>
+        const API_URL = "http://localhost:3000";
+        const token = localStorage.getItem("token");
+        const isAdmin = true; // Simulação, substituir por lógica real de verificação de admin
+
+        async function carregarAtividades() {
+            const response = await fetch(`${API_URL}/activities`);
+            const atividades = await response.json();
+            const list = document.getElementById("activitiesList");
+            list.innerHTML = atividades.map(a =>
+                `<p>${a.titulo} - ${a.descricao} - ${a.vagas} vagas 
+                 <button onclick="inscrever(${a.id})">Inscrever-se</button>
+                 ${isAdmin ? `<button onclick="editarAtividade(${a.id})">Editar</button>
+                 <button onclick="deletarAtividade(${a.id})">Excluir</button>` : ''}</p>`).join("");
+        }
+
+        async function criarAtividade() {
+            const titulo = document.getElementById("titulo").value;
+            const descricao = document.getElementById("descricao").value;
+            const vagas = document.getElementById("vagas").value;
+            const data = document.getElementById("data").value;
+
+            const response = await fetch(`${API_URL}/activities`, {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ titulo, descricao, vagas, data })
+            });
+
+            const dataRes = await response.json();
+            document.getElementById("response").innerText = dataRes.message;
+            carregarAtividades();
+        }
+
+        async function editarAtividade(id) {
+            const titulo = prompt("Novo título:");
+            const descricao = prompt("Nova descrição:");
+            const vagas = prompt("Número de vagas:");
+            const data = prompt("Nova data (AAAA-MM-DD):");
+
+            if (!titulo || !descricao || !vagas || !data) return;
+
+            const response = await fetch(`${API_URL}/activities/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ titulo, descricao, vagas, data })
+            });
+
+            const dataRes = await response.json();
+            document.getElementById("response").innerText = dataRes.message;
+            carregarAtividades();
+        }
+
+        async function deletarAtividade(id) {
+            if (!confirm("Tem certeza que deseja excluir esta atividade?")) return;
+            
+            const response = await fetch(`${API_URL}/activities/${id}`, {
+                method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            const dataRes = await response.json();
+            document.getElementById("response").innerText = dataRes.message;
+            carregarAtividades();
+        }
+
+        async function inscrever(id) {
+            const response = await fetch(`${API_URL}/activities/${id}/inscrever`, {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ usuario: "usuario@email.com" })
+            });
+
+            const data = await response.json();
+            document.getElementById("response").innerText = data.message;
+            carregarAtividades();
+        }
+
+        carregarAtividades();
+    </script>
+</body>
+</html>

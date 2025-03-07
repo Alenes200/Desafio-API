@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login e Registro</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        input, button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+
+    <h2>Registro</h2>
+    <input type="email" id="registerEmail" placeholder="E-mail">
+    <input type="password" id="registerPassword" placeholder="Senha">
+    <button onclick="register()">Registrar</button>
+
+    <h2>Login</h2>
+    <input type="email" id="loginEmail" placeholder="E-mail">
+    <input type="password" id="loginPassword" placeholder="Senha">
+    <button onclick="login()">Login</button>
+
+    <p id="response"></p>
+
+    <script>
+        const API_URL = "http://localhost:3000";
+
+        async function register() {
+            const email = document.getElementById("registerEmail").value;
+            const password = document.getElementById("registerPassword").value;
+
+            const response = await fetch(`${API_URL}/auth/register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+            document.getElementById("response").innerText = data.message;
+        }
+
+        async function login() {
+            const email = document.getElementById("loginEmail").value;
+            const password = document.getElementById("loginPassword").value;
+        
+            const response = await fetch(`${API_URL}/auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+        
+            const data = await response.json();
+            
+            if (response.ok) {
+                localStorage.setItem("token", data.token); // Salva o token
+                localStorage.setItem("usuario", JSON.stringify(data.usuario)); // Salva os dados do usuário
+                window.location.href = "atividades.html"; // Redireciona para atividades.html
+            } else {
+                document.getElementById("response").innerText = data.message;
+            }
+        }
+        
+
+        async function acessarDashboard() {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                document.getElementById("response").innerText = "Faça login primeiro!";
+                return;
+            }
+
+            const response = await fetch(`${API_URL}/protected/dashboard`, {
+                method: "GET",
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+
+            const data = await response.json();
+            document.getElementById("response").innerText = data.message;
+        }
+    </script>
+
+</body>
+</html>
