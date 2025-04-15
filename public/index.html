@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login e Registro</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
-        input, button { margin: 5px; padding: 10px; }
-    </style>
+    <title>Login e Registro</title> 
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
+    <div class="container">
+        <h2>Registro</h2>
+        <input type="email" id="registerEmail" placeholder="E-mail">
+        <input type="password" id="registerPassword" placeholder="Senha">
+        <button onclick="register()">Registrar</button>
+    </div>
 
-    <h2>Registro</h2>
-    <input type="email" id="registerEmail" placeholder="E-mail">
-    <input type="password" id="registerPassword" placeholder="Senha">
-    <button onclick="register()">Registrar</button>
-
-    <h2>Login</h2>
-    <input type="email" id="loginEmail" placeholder="E-mail">
-    <input type="password" id="loginPassword" placeholder="Senha">
-    <button onclick="login()">Login</button>
+    <div class="container">
+        <h2>Login</h2>
+        <input type="email" id="loginEmail" placeholder="E-mail">
+        <input type="password" id="loginPassword" placeholder="Senha">
+        <button onclick="login()">Login</button>
+    </div>
 
     <p id="response"></p>
 
@@ -93,6 +93,6 @@
             }
         }
     </script>
-
+    <script src="/js/auth.js"></script>
 </body>
 </html>
