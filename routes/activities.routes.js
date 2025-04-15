@@ -1,84 +1,199 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const { verificarToken, verificarAdmin } = require("../middlewares/auth.middleware");
+const { verificarToken } = require('../middlewares/auth.middleware');
 
-let atividades = []; // Simulação de banco de dados
+// Array para armazenar atividades (em produção, use um banco de dados)
+let activities = [];
+
+// Criar atividade (qualquer usuário logado)
+router.post('/', verificarToken, (req, res) => {
+    try {
+        const { title, name, date, description, slots } = req.body;
+
+        // Validações
+        if (!title || title.length < 3) {
+            return res.status(400).json({ message: 'Título deve ter pelo menos 3 caracteres' });
+        }
+
+        if (!name || name.length < 3) {
+            return res.status(400).json({ message: 'Nome deve ter pelo menos 3 caracteres' });
+        }
+
+        if (!date || new Date(date) < new Date()) {
+            return res.status(400).json({ message: 'Data deve ser futura' });
+        }
+
+        if (!description || description.length < 10) {
+            return res.status(400).json({ message: 'Descrição deve ter pelo menos 10 caracteres' });
+        }
+
+        if (!slots || slots < 1) {
+            return res.status(400).json({ message: 'Número de vagas deve ser maior que zero' });
+        }
+
+        const activity = {
+            id: Date.now().toString(),
+            title,
+            name,
+            date,
+            description,
+            slots,
+            createdBy: req.user.email,
+            participants: [],
+            availableSlots: slots,
+            createdAt: new Date()
+        };
+
+        activities.push(activity);
+        res.status(201).json(activity);
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao criar atividade' });
+    }
+});
 
 // Listar todas as atividades (público)
-router.get("/", (req, res) => {
-    res.json(atividades);
+router.get('/', (req, res) => {
+    res.json(activities);
 });
 
-// Criar uma nova atividade (somente admin)
-router.post("/", verificarToken, verificarAdmin, (req, res) => {
-    const { titulo, descricao, vagas, data } = req.body;
-    const novaAtividade = { id: atividades.length + 1, titulo, descricao, vagas, data, inscritos: [] };
-    atividades.push(novaAtividade);
-    res.json({ message: "Atividade criada com sucesso!", atividade: novaAtividade });
+// Participar de uma atividade
+router.post('/:id/participate', verificarToken, (req, res) => {
+    try {
+        const activity = activities.find(a => a.id === req.params.id);
+        
+        if (!activity) {
+            return res.status(404).json({ message: 'Atividade não encontrada' });
+        }
+
+        // Verificar se já está participando
+        if (activity.participants.includes(req.user.email)) {
+            return res.status(400).json({ message: 'Você já está participando desta atividade' });
+        }
+
+        // Verificar se há vagas disponíveis
+        if (activity.availableSlots <= 0) {
+            return res.status(400).json({ message: 'Não há vagas disponíveis' });
+        }
+
+        // Adicionar participante
+        activity.participants.push(req.user.email);
+        activity.availableSlots--;
+
+        res.json({ message: 'Participação confirmada com sucesso!' });
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao participar da atividade' });
+    }
 });
 
-// Editar atividade (somente admin)
-router.put("/:id", verificarToken, verificarAdmin, (req, res) => {
-    const { id } = req.params;
-    const { titulo, descricao, vagas, data } = req.body;
-    const atividade = atividades.find(a => a.id == id);
-    if (!atividade) return res.status(404).json({ message: "Atividade não encontrada!" });
+// Cancelar participação
+router.delete('/:id/participate', verificarToken, (req, res) => {
+    try {
+        const activity = activities.find(a => a.id === req.params.id);
+        
+        if (!activity) {
+            return res.status(404).json({ message: 'Atividade não encontrada' });
+        }
 
-    atividade.titulo = titulo;
-    atividade.descricao = descricao;
-    atividade.vagas = vagas;
-    atividade.data = data;
-    
-    res.json({ message: "Atividade atualizada com sucesso!", atividade });
+        const participantIndex = activity.participants.indexOf(req.user.email);
+        if (participantIndex === -1) {
+            return res.status(400).json({ message: 'Você não está participando desta atividade' });
+        }
+
+        // Remover participante
+        activity.participants.splice(participantIndex, 1);
+        activity.availableSlots++;
+
+        res.json({ message: 'Participação cancelada com sucesso!' });
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao cancelar participação' });
+    };
 });
 
-// Excluir atividade (somente admin)
-router.delete("/:id", verificarToken, verificarAdmin, (req, res) => {
-    const { id } = req.params;
-    atividades = atividades.filter(a => a.id != id);
-    res.json({ message: "Atividade excluída com sucesso!" });
+// Editar atividade (apenas criador)
+router.put('/:id', verificarToken, (req, res) => {
+    try {
+        const activityIndex = activities.findIndex(a => a.id === req.params.id);
+        
+        if (activityIndex === -1) {
+            return res.status(404).json({ message: 'Atividade não encontrada' });
+        }
+
+        // Verificar se é o criador da atividade
+        if (activities[activityIndex].createdBy !== req.user.email) {
+            return res.status(403).json({ message: 'Apenas o criador pode editar a atividade' });
+        }
+
+        const { title, name, date, description, slots } = req.body;
+
+        // Validações
+        if (title && title.length < 3) {
+            return res.status(400).json({ message: 'Título inválido' });
+        }
+
+        if (name && name.length < 3) {
+            return res.status(400).json({ message: 'Nome inválido' });
+        }
+
+        if (date && new Date(date) < new Date()) {
+            return res.status(400).json({ message: 'Data inválida' });
+        }
+
+        if (description && description.length < 10) {
+            return res.status(400).json({ message: 'Descrição inválida' });
+        }
+
+        if (slots && slots < activities[activityIndex].participants.length) {
+            return res.status(400).json({ message: 'Número de vagas não pode ser menor que o número de participantes' });
+        }
+
+        // Atualizar atividade
+        activities[activityIndex] = {
+            ...activities[activityIndex],
+            title: title || activities[activityIndex].title,
+            name: name || activities[activityIndex].name,
+            date: date || activities[activityIndex].date,
+            description: description || activities[activityIndex].description,
+            slots: slots || activities[activityIndex].slots,
+            availableSlots: (slots || activities[activityIndex].slots) - activities[activityIndex].participants.length
+        };
+
+        res.json(activities[activityIndex]);
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao editar atividade' });
+    }
 });
 
-// Inscrever usuário em uma atividade
-router.post("/:id/inscrever", verificarToken, (req, res) => {
-    const { id } = req.params;
-    const { usuario } = req.body;
-    const atividade = atividades.find(a => a.id == id);
-
-    if (!atividade) return res.status(404).json({ message: "Atividade não encontrada!" });
-    if (atividade.inscritos.includes(usuario)) return res.status(400).json({ message: "Você já está inscrito!" });
-    if (atividade.inscritos.length >= atividade.vagas) return res.status(400).json({ message: "Vagas esgotadas!" });
-
-    atividade.inscritos.push(usuario);
-    res.json({ message: "Inscrição realizada com sucesso!" });
+// Nova rota para buscar atividades do usuário
+router.get('/minhas-atividades', verificarToken, (req, res) => {
+    try {
+        const userActivities = activities.filter(activity => 
+            activity.createdBy === req.user.email || 
+            activity.participants.includes(req.user.email)
+        );
+        res.json(userActivities);
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao buscar atividades' });
+    }
 });
 
-// Cancelar inscrição
-router.post("/:id/cancelar", verificarToken, (req, res) => {
-    const { id } = req.params;
-    const { usuario } = req.body;
-    const atividade = atividades.find(a => a.id == id);
+// Nova rota para deletar atividade
+router.delete('/:id', verificarToken, (req, res) => {
+    try {
+        const index = activities.findIndex(a => a.id === req.params.id);
+        
+        if (index === -1) {
+            return res.status(404).json({ message: 'Atividade não encontrada' });
+        }
 
-    if (!atividade) return res.status(404).json({ message: "Atividade não encontrada!" });
-    atividade.inscritos = atividade.inscritos.filter(u => u !== usuario);
+        if (activities[index].createdBy !== req.user.email) {
+            return res.status(403).json({ message: 'Apenas o criador pode deletar a atividade' });
+        }
 
-    res.json({ message: "Inscrição cancelada com sucesso!" });
-});
-
-// Listar atividades do usuário
-router.get("/minhas", verificarToken, (req, res) => {
-    const { usuario } = req.query;
-    const minhasAtividades = atividades.filter(a => a.inscritos.includes(usuario));
-    res.json(minhasAtividades);
-});
-
-// Listar inscritos em uma atividade (somente admin)
-router.get("/:id/inscritos", verificarToken, verificarAdmin, (req, res) => {
-    const { id } = req.params;
-    const atividade = atividades.find(a => a.id == id);
-    if (!atividade) return res.status(404).json({ message: "Atividade não encontrada!" });
-
-    res.json({ inscritos: atividade.inscritos });
+        activities.splice(index, 1);
+        res.json({ message: 'Atividade deletada com sucesso' });
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao deletar atividade' });
+    }
 });
 
 module.exports = router;

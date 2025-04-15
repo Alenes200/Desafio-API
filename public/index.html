@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login e Registro</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
-        input, button { margin: 5px; padding: 10px; }
-    </style>
+    <title>Login e Registro</title> 
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
+    <div class="container">
+        <h2>Registro</h2>
+        <input type="email" id="registerEmail" placeholder="E-mail">
+        <input type="password" id="registerPassword" placeholder="Senha">
+        <button onclick="register()">Registrar</button>
+    </div>
 
-    <h2>Registro</h2>
-    <input type="email" id="registerEmail" placeholder="E-mail">
-    <input type="password" id="registerPassword" placeholder="Senha">
-    <button onclick="register()">Registrar</button>
-
-    <h2>Login</h2>
-    <input type="email" id="loginEmail" placeholder="E-mail">
-    <input type="password" id="loginPassword" placeholder="Senha">
-    <button onclick="login()">Login</button>
+    <div class="container">
+        <h2>Login</h2>
+        <input type="email" id="loginEmail" placeholder="E-mail">
+        <input type="password" id="loginPassword" placeholder="Senha">
+        <button onclick="login()">Login</button>
+    </div>
 
     <p id="response"></p>
 
@@ -27,57 +27,72 @@
         const API_URL = "http://localhost:3000";
 
         async function register() {
-            const email = document.getElementById("registerEmail").value;
-            const password = document.getElementById("registerPassword").value;
+            try {
+                const email = document.getElementById("registerEmail").value;
+                const password = document.getElementById("registerPassword").value;
 
-            const response = await fetch(`${API_URL}/auth/register`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password })
-            });
+                if (!email || !password) {
+                    throw new Error("Por favor, preencha todos os campos!");
+                }
 
-            const data = await response.json();
-            document.getElementById("response").innerText = data.message;
+                const response = await fetch(`${API_URL}/auth/register`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message);
+                }
+
+                document.getElementById("response").innerText = data.message;
+                document.getElementById("response").style.color = "green";
+            } catch (error) {
+                document.getElementById("response").innerText = error.message;
+                document.getElementById("response").style.color = "red";
+            }
         }
 
         async function login() {
-            const email = document.getElementById("loginEmail").value;
-            const password = document.getElementById("loginPassword").value;
-        
-            const response = await fetch(`${API_URL}/auth/login`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password })
-            });
-        
-            const data = await response.json();
-            
-            if (response.ok) {
-                localStorage.setItem("token", data.token); // Salva o token
-                localStorage.setItem("usuario", JSON.stringify(data.usuario)); // Salva os dados do usuário
-                window.location.href = "atividades.html"; // Redireciona para atividades.html
-            } else {
-                document.getElementById("response").innerText = data.message;
+            try {
+                const email = document.getElementById("loginEmail").value;
+                const password = document.getElementById("loginPassword").value;
+
+                if (!email || !password) {
+                    throw new Error("Por favor, preencha todos os campos!");
+                }
+
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message);
+                }
+
+                localStorage.setItem("token", data.token);
+                localStorage.setItem("userRole", data.user.role);
+                localStorage.setItem("userEmail", data.user.email);
+
+                document.getElementById("response").innerText = "Login realizado com sucesso!";
+                document.getElementById("response").style.color = "green";
+                
+                // Redireciona após 1 segundo
+                setTimeout(() => {
+                    window.location.href = "atividades.html";
+                }, 1000);
+            } catch (error) {
+                document.getElementById("response").innerText = error.message;
+                document.getElementById("response").style.color = "red";
             }
-        }
-        
-
-        async function acessarDashboard() {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                document.getElementById("response").innerText = "Faça login primeiro!";
-                return;
-            }
-
-            const response = await fetch(`${API_URL}/protected/dashboard`, {
-                method: "GET",
-                headers: { "Authorization": `Bearer ${token}` }
-            });
-
-            const data = await response.json();
-            document.getElementById("response").innerText = data.message;
         }
     </script>
-
+    <script src="/js/auth.js"></script>
 </body>
 </html>
