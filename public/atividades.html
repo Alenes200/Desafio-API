@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atividades</title>
-    <link rel="stylesheet" href="/css/activities.css">
+    <link rel="stylesheet" href="./css/activities.css">
 </head>
 <body>
     <div class="container">
@@ -12,16 +12,15 @@
         
         <!-- Formulário de criação -->
         <div class="create-activity-form">
-            <h3>Criar Nova Atividade</h3>
             <form id="createActivityForm" onsubmit="createActivity(event)">
                 <div class="form-group">
                     <label for="title">Título:</label>
-                    <input type="text" id="title" required minlength="3" placeholder="Digite o título">
+                    <input type="text" id="title" required minlength="3">
                 </div>
 
                 <div class="form-group">
-                    <label for="name">Nome da Atividade:</label>
-                    <input type="text" id="name" required minlength="3" placeholder="Digite o nome">
+                    <label for="name">Nome do Organizador:</label>
+                    <input type="text" id="name" required minlength="3">
                 </div>
 
                 <div class="form-group">
@@ -31,7 +30,7 @@
 
                 <div class="form-group">
                     <label for="description">Descrição:</label>
-                    <textarea id="description" required minlength="10" placeholder="Descreva a atividade"></textarea>
+                    <textarea id="description" required minlength="10"></textarea>
                 </div>
 
                 <div class="form-group">
@@ -44,9 +43,11 @@
         </div>
 
         <!-- Lista de atividades -->
-        <div id="activities-list"></div>
+        <div id="activities-list">
+            <!-- As atividades serão carregadas aqui dinamicamente -->
+        </div>
     </div>
 
-    <script src="/js/activities.js"></script>
+    <script src="./js/activities.js"></script>
 </body>
 </html>

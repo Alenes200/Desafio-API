@@ -1,25 +1,4 @@
-# Dependencies
 node_modules/
-
-# Environment variables
+data/
 .env
-
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Logs
-logs
-*.log
-npm-debug.log*
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# IDE files
-.vscode/
-.idea/
+package-lock.json

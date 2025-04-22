@@ -1,4 +1,6 @@
-const API_URL = "http://localhost:3000";
+if (typeof API_URL === 'undefined') {
+    const API_URL = "http://localhost:3000";
+}
 
 async function register() {
     try {
